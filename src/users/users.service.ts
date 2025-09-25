@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { UserRegisterDTO } from './dtos/user.register.dto';
 import { UserLoginDTO } from './dtos/user.login.dto';
@@ -31,12 +35,12 @@ export class UsersService {
   async userLogin({ email, password }: UserLoginDTO): Promise<string> {
     const data = await this.userRepository.verifyDataFromDB(email);
     if (!data) {
-      throw Error('Нет такого пользователя!');
+      throw new NotFoundException(`user not found`);
     }
     const newUser = new User(data.email, data.name, data.password);
     const pass = await newUser.comparePassword(password);
     if (!pass) {
-      throw Error('Пароли не совпадают');
+      throw new BadRequestException(`password is not correct`);
     }
     const { refreshToken } = this.createToken({
       email: data.email,
