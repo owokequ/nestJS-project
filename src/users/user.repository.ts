@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserRegisterDTO } from './dtos/user.register.dto';
-import { User } from '@prisma/client';
+import { User, UserToken } from '@prisma/client';
 
 @Injectable()
 export class UserRepository {
@@ -10,7 +10,7 @@ export class UserRepository {
     { name, email, password }: UserRegisterDTO,
     refresh_token: string,
   ): Promise<User> {
-    const addUser = await this.prismaService.user.create({
+    return await this.prismaService.user.create({
       data: {
         name,
         email,
@@ -22,16 +22,27 @@ export class UserRepository {
         },
       },
     });
-    return addUser;
   }
 
   async verifyDataFromDB(email: string): Promise<User | null> {
-    const user = await this.prismaService.user.findUnique({
+    return await this.prismaService.user.findUnique({
       where: { email },
       include: {
         userToken: true,
       },
     });
-    return user;
+  }
+
+  async updateTokenFromDB(
+    userId: number,
+    refreshToken: string,
+  ): Promise<UserToken> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    return await this.prismaService.userToken.update({
+      where: { user_id: userId },
+      data: {
+        refresh_token: refreshToken,
+      },
+    });
   }
 }

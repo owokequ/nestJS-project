@@ -25,10 +25,10 @@ export class UsersService {
       },
       refreshToken,
     );
-    return { data, accessToken };
+    return { data, accessToken, refreshToken };
   }
 
-  async userLogin({ email, password }: UserLoginDTO): Promise<boolean> {
+  async userLogin({ email, password }: UserLoginDTO): Promise<string> {
     const data = await this.userRepository.verifyDataFromDB(email);
     if (!data) {
       throw Error('Нет такого пользователя!');
@@ -38,7 +38,12 @@ export class UsersService {
     if (!pass) {
       throw Error('Пароли не совпадают');
     }
-    return pass;
+    const { refreshToken } = this.createToken({
+      email: data.email,
+      name: data.name,
+    });
+    await this.userRepository.updateTokenFromDB(data.id, refreshToken);
+    return refreshToken;
   }
 
   createToken(payload: object) {
@@ -50,7 +55,7 @@ export class UsersService {
       expiresIn: '15m',
     });
     const refreshToken = sign(payload, jwtSecretRefresh, {
-      expiresIn: '15m',
+      expiresIn: '7d',
     });
     return { accessToken, refreshToken };
   }
