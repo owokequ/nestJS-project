@@ -1,8 +1,18 @@
-import { Body, Controller, HttpStatus, Next, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Next,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UserRegisterDTO } from './dtos/user.register.dto';
 import { UserLoginDTO } from './dtos/user.login.dto';
-import type { NextFunction, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import type { RequestWithCookies } from 'src/interface/req.interface';
 
 @Controller('users')
 export class UsersController {
@@ -36,6 +46,25 @@ export class UsersController {
       const result = await this.usersService.userLogin(userData);
       this.setCooke(res, result);
       return res.status(HttpStatus.ACCEPTED).json({ message: true });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Get('/refresh')
+  async refreshToken(
+    @Next() next: NextFunction,
+    @Req() req: RequestWithCookies,
+    @Res() res: Response,
+  ) {
+    try {
+      const token = req.cookies.refreshToken as string;
+      if (!token) {
+        next('Token not found');
+      }
+      const refresh_token = await this.usersService.refreshToken(token);
+      this.setCooke(res, refresh_token);
+      return res.json({ message: 'токен успешно заменен', refresh_token });
     } catch (error) {
       next(error);
     }

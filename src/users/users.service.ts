@@ -7,7 +7,7 @@ import { UserRepository } from './user.repository';
 import { UserRegisterDTO } from './dtos/user.register.dto';
 import { UserLoginDTO } from './dtos/user.login.dto';
 import { User } from './user.entity';
-import { sign } from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -49,16 +49,32 @@ export class UsersService {
     await this.userRepository.updateTokenFromDB(data.id, refreshToken);
     return refreshToken;
   }
+  async refreshToken(token: string) {
+    const verify = jwt.verify(
+      token,
+      this.configService.get('SECRET_FOR_REFRESH') as string,
+    ) as jwt.JwtPayload & { email: string; name: string };
+    if (!verify) {
+      throw new BadRequestException(`Токен не прошел проверку`);
+    }
+    const data = await this.userRepository.verifyDataFromDB(verify.email);
+    if (!data) {
+      throw new BadRequestException(`Токен был отозван`);
+    }
+    const tokens = this.createToken({ email: verify.email, name: verify.name });
+    await this.userRepository.updateTokenFromDB(data.id, tokens.refreshToken);
+    return tokens.refreshToken;
+  }
 
   createToken(payload: object) {
     const jwtSecret = this.configService.get('SECRET_FOR_ACCESS') as string;
     const jwtSecretRefresh = this.configService.get(
       'SECRET_FOR_REFRESH',
     ) as string;
-    const accessToken = sign(payload, jwtSecret, {
+    const accessToken = jwt.sign(payload, jwtSecret, {
       expiresIn: '15m',
     });
-    const refreshToken = sign(payload, jwtSecretRefresh, {
+    const refreshToken = jwt.sign(payload, jwtSecretRefresh, {
       expiresIn: '7d',
     });
     return { accessToken, refreshToken };

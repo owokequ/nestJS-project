@@ -37,7 +37,6 @@ export class UserRepository {
     userId: number,
     refreshToken: string,
   ): Promise<UserToken> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     return await this.prismaService.userToken.update({
       where: { user_id: userId },
       data: {
