@@ -24,7 +24,7 @@ export class UserRepository {
     });
   }
 
-  async verifyDataFromDB(email: string): Promise<User | null> {
+  async verifyDataFromDB(email: string) {
     return await this.prismaService.user.findUnique({
       where: { email },
       include: {
@@ -37,9 +37,13 @@ export class UserRepository {
     userId: number,
     refreshToken: string,
   ): Promise<UserToken> {
-    return await this.prismaService.userToken.update({
+    return await this.prismaService.userToken.upsert({
       where: { user_id: userId },
-      data: {
+      update: {
+        refresh_token: refreshToken,
+      },
+      create: {
+        user_id: userId,
         refresh_token: refreshToken,
       },
     });

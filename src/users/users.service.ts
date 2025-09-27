@@ -58,7 +58,7 @@ export class UsersService {
       throw new BadRequestException(`Токен не прошел проверку`);
     }
     const data = await this.userRepository.verifyDataFromDB(verify.email);
-    if (!data) {
+    if (!data || !data.userToken) {
       throw new BadRequestException(`Токен был отозван`);
     }
     const tokens = this.createToken({ email: verify.email, name: verify.name });
