@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -60,7 +61,7 @@ export class UsersController {
     try {
       const token = req.cookies.refreshToken as string;
       if (!token) {
-        next('Token not found');
+        throw new BadRequestException('Token not found');
       }
       const refresh_token = await this.usersService.refreshToken(token);
       this.setCooke(res, refresh_token);
