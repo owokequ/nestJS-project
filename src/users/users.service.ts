@@ -18,6 +18,10 @@ export class UsersService {
   ) {}
 
   async userRegister({ email, name, password }: UserRegisterDTO) {
+    const verify = await this.userRepository.verifyDataFromDB(email);
+    if (verify) {
+      throw new BadRequestException('Пользователь уже зарегестрирован');
+    }
     const newUser = new User(name, email);
     password = await newUser.setPassword(password);
     const { accessToken, refreshToken } = this.createToken({ name, email });
@@ -49,6 +53,15 @@ export class UsersService {
     await this.userRepository.updateTokenFromDB(data.id, refreshToken);
     return refreshToken;
   }
+
+  async validate(email: string) {
+    const user = await this.userRepository.verifyDataFromDB(email);
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+    return user;
+  }
+
   async refreshToken(token: string) {
     const verify = jwt.verify(
       token,
@@ -66,7 +79,7 @@ export class UsersService {
     return tokens.refreshToken;
   }
 
-  createToken(payload: object) {
+  private createToken(payload: object) {
     const jwtSecret = this.configService.get('SECRET_FOR_ACCESS') as string;
     const jwtSecretRefresh = this.configService.get(
       'SECRET_FOR_REFRESH',

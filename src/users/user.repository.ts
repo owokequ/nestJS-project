@@ -9,7 +9,7 @@ export class UserRepository {
   async addUserFromDB(
     { name, email, password }: UserRegisterDTO,
     refresh_token: string,
-  ): Promise<User> {
+  ): Promise<User | boolean> {
     return await this.prismaService.user.create({
       data: {
         name,

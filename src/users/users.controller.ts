@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -8,12 +7,15 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UserRegisterDTO } from './dtos/user.register.dto';
 import { UserLoginDTO } from './dtos/user.login.dto';
 import type { NextFunction, Request, Response } from 'express';
 import type { RequestWithCookies } from 'src/interface/req.interface';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('users')
 export class UsersController {
@@ -61,7 +63,7 @@ export class UsersController {
     try {
       const token = req.cookies.refreshToken as string;
       if (!token) {
-        throw new BadRequestException('Token not found');
+        throw new UnauthorizedException('Token not found');
       }
       const refresh_token = await this.usersService.refreshToken(token);
       this.setCooke(res, refresh_token);
@@ -71,7 +73,20 @@ export class UsersController {
     }
   }
 
-  setCooke(@Res() res: Response, refresh: string) {
+  @Get('logout')
+  logout(@Res() res: Response, @Req() req: RequestWithCookies) {
+    res.cookie('refreshToken', req.cookies.refreshToken, {
+      maxAge: 0,
+    });
+    return res.json({ message: 'Вы вышли из аккаунта' });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('@me')
+  me(@Req() req: Request) {
+    return req.user;
+  }
+  private setCooke(@Res() res: Response, refresh: string) {
     res.cookie('refreshToken', refresh, {
       httpOnly: true,
       secure: true,
