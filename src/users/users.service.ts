@@ -24,7 +24,11 @@ export class UsersService {
     }
     const newUser = new User(name, email);
     password = await newUser.setPassword(password);
-    const { accessToken, refreshToken } = this.createToken({ name, email });
+    const { accessToken, refreshToken } = this.createToken({
+      name,
+      email,
+      role: 'user',
+    });
     const data = await this.userRepository.addUserFromDB(
       {
         email,
@@ -36,7 +40,7 @@ export class UsersService {
     return { data, accessToken, refreshToken };
   }
 
-  async userLogin({ email, password }: UserLoginDTO): Promise<string> {
+  async userLogin({ email, password }: UserLoginDTO) {
     const data = await this.userRepository.verifyDataFromDB(email);
     if (!data) {
       throw new NotFoundException(`user not found`);
@@ -46,12 +50,15 @@ export class UsersService {
     if (!pass) {
       throw new BadRequestException(`password is not correct`);
     }
-    const { refreshToken } = this.createToken({
+    const { refreshToken, accessToken } = this.createToken({
       email: data.email,
       name: data.name,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      role: data.role,
     });
     await this.userRepository.updateTokenFromDB(data.id, refreshToken);
-    return refreshToken;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    return { refresh: refreshToken, access: accessToken, role: data.role };
   }
 
   async validate(email: string) {
@@ -59,14 +66,15 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    return user;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    return { email: user.email, name: user.name, role: user.role };
   }
 
   async refreshToken(token: string) {
     const verify = jwt.verify(
       token,
       this.configService.get('SECRET_FOR_REFRESH') as string,
-    ) as jwt.JwtPayload & { email: string; name: string };
+    ) as jwt.JwtPayload & { email: string; name: string; role: string };
     if (!verify) {
       throw new BadRequestException(`Токен не прошел проверку`);
     }
@@ -74,9 +82,17 @@ export class UsersService {
     if (!data || !data.userToken) {
       throw new BadRequestException(`Токен был отозван`);
     }
-    const tokens = this.createToken({ email: verify.email, name: verify.name });
+    const tokens = this.createToken({
+      email: verify.email,
+      name: verify.name,
+      role: verify.role,
+    });
     await this.userRepository.updateTokenFromDB(data.id, tokens.refreshToken);
-    return tokens.refreshToken;
+    return {
+      refresh: tokens.refreshToken,
+      access: tokens.accessToken,
+      role: verify.role,
+    };
   }
 
   private createToken(payload: object) {

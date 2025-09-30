@@ -16,6 +16,8 @@ import { UserLoginDTO } from './dtos/user.login.dto';
 import type { NextFunction, Request, Response } from 'express';
 import type { RequestWithCookies } from 'src/interface/req.interface';
 import { AuthGuard } from '@nestjs/passport';
+import { Role } from 'src/common/decorators/role.decorators';
+import { RoleGuard } from 'src/common/Guards/role.guard';
 
 @Controller('users')
 export class UsersController {
@@ -46,9 +48,11 @@ export class UsersController {
     @Next() next: NextFunction,
   ) {
     try {
-      const result = await this.usersService.userLogin(userData);
-      this.setCooke(res, result);
-      return res.status(HttpStatus.ACCEPTED).json({ message: true });
+      const { refresh, access } = await this.usersService.userLogin(userData);
+      this.setCooke(res, refresh);
+      return res
+        .status(HttpStatus.ACCEPTED)
+        .json({ message: true, access: access });
     } catch (error) {
       next(error);
     }
@@ -65,9 +69,15 @@ export class UsersController {
       if (!token) {
         throw new UnauthorizedException('Token not found');
       }
-      const refresh_token = await this.usersService.refreshToken(token);
-      this.setCooke(res, refresh_token);
-      return res.json({ message: 'токен успешно заменен', refresh_token });
+      const { refresh, access, role } =
+        await this.usersService.refreshToken(token);
+      this.setCooke(res, refresh);
+      return res.json({
+        message: 'токен успешно заменен',
+        refresh: refresh,
+        access: access,
+        role: role,
+      });
     } catch (error) {
       next(error);
     }
@@ -81,11 +91,13 @@ export class UsersController {
     return res.json({ message: 'Вы вышли из аккаунта' });
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Role('admin')
   @Get('@me')
   me(@Req() req: Request) {
     return req.user;
   }
+
   private setCooke(@Res() res: Response, refresh: string) {
     res.cookie('refreshToken', refresh, {
       httpOnly: true,
