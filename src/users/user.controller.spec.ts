@@ -13,8 +13,8 @@ const mockUserService = () => ({
 
 const dto = {
   name: 'Liza',
-  email: 'Liza@test.com',
-  password: '12345',
+  email: 'test@test.com',
+  password: '123',
 };
 
 const resultDto = {
@@ -55,7 +55,7 @@ describe('UserController', () => {
     userService = module.get<UsersService>(UsersService);
   });
 
-  it('should register user', async () => {
+  it('should be register user', async () => {
     const res = mockRes(); // фейковый res
     const req = mockReq({ email: 'test@test.com', password: '123' }); // фейковый req
     const next = mockNext; // фейковый next
@@ -73,6 +73,29 @@ describe('UserController', () => {
     expect(res.json).toHaveBeenCalledWith({
       user: { id: 1, name: 'Test', email: 'test@test.com' },
       accessToken: 'fake-access',
+    });
+  });
+
+  it('should be LoginUser', async () => {
+    const res = mockRes(); // фейковый res
+    const req = mockReq({ email: 'test@test.com', password: '123' }); // фейковый req
+    const next = mockNext; // фейковый next
+
+    userService.userLogin.mockResolvedValue({
+      refresh: 'fake-refresh',
+      access: 'fake-access',
+    });
+    await controller.LoginUser(
+      { email: dto.email, password: dto.password },
+      res,
+      next,
+    );
+
+    expect(userService.userLogin).toHaveBeenCalledWith(req.body);
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({
+      message: true,
+      access: 'fake-access',
     });
   });
 });
