@@ -53,11 +53,10 @@ export class UsersService {
     const { refreshToken, accessToken } = this.createToken({
       email: data.email,
       name: data.name,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       role: data.role,
     });
     await this.userRepository.updateTokenFromDB(data.id, refreshToken);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     return { refresh: refreshToken, access: accessToken, role: data.role };
   }
 
@@ -66,7 +65,7 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     return { email: user.email, name: user.name, role: user.role };
   }
 
@@ -95,7 +94,7 @@ export class UsersService {
     };
   }
 
-  private createToken(payload: object) {
+  createToken(payload: object) {
     const jwtSecret = this.configService.get('SECRET_FOR_ACCESS') as string;
     const jwtSecretRefresh = this.configService.get(
       'SECRET_FOR_REFRESH',

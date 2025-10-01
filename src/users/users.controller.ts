@@ -16,8 +16,8 @@ import { UserLoginDTO } from './dtos/user.login.dto';
 import type { NextFunction, Request, Response } from 'express';
 import type { RequestWithCookies } from 'src/interface/req.interface';
 import { AuthGuard } from '@nestjs/passport';
-import { Role } from 'src/common/decorators/role.decorators';
-import { RoleGuard } from 'src/common/Guards/role.guard';
+import { Role } from '../common/decorators/role.decorators';
+import { RoleGuard } from '../common/Guards/role.guard';
 
 @Controller('users')
 export class UsersController {
