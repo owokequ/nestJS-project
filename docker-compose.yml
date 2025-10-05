@@ -1,0 +1,24 @@
+services:
+  app:
+    container_name: nest-app
+    build: .
+    ports:
+      - '3000:3000'
+      - '5555:5555'
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -3,6 +3,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { emit } from 'process';
 import { access } from 'fs';
+import { Response } from 'express';
 
 const mockUserService = () => ({
   userRegister: jest.fn(),
@@ -26,7 +27,7 @@ const resultDto = {
 };
 
 const mockRes = () => {
-  const res: any = {};
+  const res: Response = {};
   res.status = jest.fn().mockReturnValue(res);
   res.json = jest.fn().mockReturnValue(res);
   res.cookie = jest.fn().mockReturnValue(res);
